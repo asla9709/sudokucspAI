@@ -3,6 +3,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.lang.management.BufferPoolMXBean;
+import java.nio.channels.AsynchronousChannelGroup;
+import java.sql.SQLOutput;
+import java.time.temporal.ValueRange;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Scanner;
@@ -40,6 +43,13 @@ public class Main {
 
         var constraints = new ArrayList<AllDiff>();
 
+        for(int row = 0; row < 9; row++){
+            for(int col = 0; col < 9; col++){
+                char a = 'A';
+                sBoard[row][col].name = row + "," + col;
+            }
+        }
+
         //generate constraints
         //rows
         for (int row = 0; row < 9; row++) {
@@ -50,7 +60,7 @@ public class Main {
         for (int col = 0; col < 9; col++) {
             var c = new AllDiff();
             for (int row = 0; row < 9; row++) {
-                c.vars.add(sBoard[row][col]);
+                c.add(sBoard[row][col]);
             }
             constraints.add(c);
         }
@@ -62,7 +72,7 @@ public class Main {
         for (int row = 0; row < 9; row++) {
             for (int col = 0; col < 9; col++) {
                 int sq = (row / 3) * 3 + col/3;
-                sq_constraints[sq].vars.add(sBoard[row][col]);
+                sq_constraints[sq].add(sBoard[row][col]);
             }
         }
         constraints.addAll(Arrays.asList(sq_constraints));
@@ -70,15 +80,33 @@ public class Main {
         System.out.println(printBoard(sBoard));
 
 
-        while(true) {
-            for (var c : constraints) {
-                c.reduceDomains();
+        //preprocessing step
+        //do inferences until you can't no more
+        ChangeList cl;
+        do{
+            cl = new ChangeList();
+            for(Constraint constraint : constraints){
+                constraint.inferDomains(cl);
             }
+        }while(cl.size() > 0);
 
+        //check if that solved the problem
+
+        if(assignmentComplete(sBoard)){
+            //TODO: print board into file and exit
             System.out.println(printBoard(sBoard));
+            return;
         }
 
+        //otherwise, continue with backtrack search
+        boolean success = Backtrack(sBoard);
 
+        if(success){
+            System.out.println("Hey I solved it\n");
+            System.out.println(printBoard(sBoard));
+        } else {
+            System.out.println("This sudoku puzzle has no solution :(");
+        }
 
 
 
@@ -96,7 +124,7 @@ public class Main {
         for (int row = 0; row < 9; row++) {
             for (int col = 0; col < 9; col++) {
                 if(board[row][col].domain.size() == 1){
-                    s += board[row][col].domain.get(0);
+                    s += board[row][col].domain.iterator().next();
                 } else {
                     s += "_";
                 }
@@ -106,5 +134,70 @@ public class Main {
         }
         return s;
     }
+
+    static Variable selectUnassignedVariable(Variable[][] board){
+        //First, pick variable with minimum remaining values (smallest domain)
+       int smallestDomain = 1000;
+       ArrayList<Variable> selectedVariables = new ArrayList<>();
+        for (var row : board) {
+           for(var v: row){
+               if(v.domain.size() <= 1) continue; //variable is assigned, skip
+               if(v.domain.size() < smallestDomain){ //variable has smaller domain
+                   selectedVariables.clear();
+                   selectedVariables.add(v);
+               }
+               if(v.domain.size() == smallestDomain){
+                   selectedVariables.add(v);
+               }
+           }
+        }
+
+        if(selectedVariables.size() == 1){
+            return selectedVariables.get(0);
+        }
+
+        //In case of a tie, use degree heuristic to select the best variable
+
+        Variable finalVariable = selectedVariables.get(0);
+        int largestDegree = finalVariable.getDegreeHeuristic();
+
+        for(var v: selectedVariables){
+            if(v.getDegreeHeuristic() > largestDegree){
+                largestDegree = v.getDegreeHeuristic();
+                finalVariable = v;
+            }
+        }
+
+        return finalVariable;
+    }
+
+    static boolean assignmentComplete(Variable[][] board){
+        for(var row : board){
+            for(var v: row){
+                if(v.domain.size() > 1) return false;
+            }
+        }
+        return true;
+    }
+
+    static boolean Backtrack(Variable[][] board){
+        if(assignmentComplete(board)) return true;
+        Variable v = selectUnassignedVariable(board);
+        Integer[] v_domain = new Integer[v.domain.size()];
+        v.domain.toArray(v_domain);
+        for(Integer i : v_domain){
+            ChangeList cl = new ChangeList();
+            v.setValue(i, cl);
+            boolean failure = v.doArcConsistency(cl);
+            if(!failure){
+                boolean result = Backtrack(board);
+                if(result){
+                    return result;
+                }
+            }
+            cl.undo();
+        }
+        return false;
+    };
 
 }

@@ -1,27 +1,26 @@
-import java.time.temporal.ValueRange;
+import java.nio.channels.AsynchronousChannelGroup;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 
-public class AllDiff {
-    public ArrayList<Variable> vars = new ArrayList<>();
+public class AllDiff extends Constraint{
 
-    AllDiff(Variable[] vars){
-        this.vars = new ArrayList<Variable>(Arrays.asList(vars));
+    public AllDiff(Variable[] variables) {
+        super(variables);
     }
 
     public AllDiff() {
-        this.vars = new ArrayList<>();
+        super();
     }
 
-    boolean isSatisfied(){
+    boolean isConsistent(){
         var hs = new HashSet<Integer>();
         for(var v : vars){
-            if (v.value == 0) continue;
-            if(hs.contains(v.value)){
+            if (v.domain.size() > 1) continue; //if unset, continue
+            int v_value = v.domain.iterator().next();
+            if(hs.contains(v_value)){
                 return false;
             }
-            hs.add(v.value);
+            hs.add(v_value);
         }
         return true;
     }
@@ -34,24 +33,26 @@ public class AllDiff {
         return null;
     }
 
-    boolean reduceDomains(){
-        return reduceDomains(new ArrayList<>(vars));
+    boolean inferDomains(ChangeList cl){
+        return inferDomains(new ArrayList<>(vars), cl);
     }
 
-    boolean reduceDomains(ArrayList<Variable> varlist){
+    boolean inferDomains(ArrayList<Variable> varlist, ChangeList cl){
+        if(!isConsistent()) return false;
         Variable v = getVarSingletonDomain(varlist);
         if (v == null) return true;
         varlist.remove(v);
 
-        Integer v_value = v.domain.get(0);
+        Integer v_value = v.domain.iterator().next();
         //remove v_value from domains of all other variables
-        for(var x: vars){
+        for(var x: varlist){
             if(x == v) continue;
-            x.domain.remove(v_value);
+            x.removeFromDomain(v_value, cl);
             if(x.domain.size() == 0){
+                cl.isFailure = true;
                 return false;
             }
         }
-        return reduceDomains(varlist);
+        return inferDomains(varlist, cl);
     }
 }
