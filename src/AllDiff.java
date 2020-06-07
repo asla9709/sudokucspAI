@@ -4,12 +4,12 @@ import java.util.HashSet;
 
 public class AllDiff extends Constraint{
 
-    public AllDiff(Variable[] variables) {
-        super(variables);
+    public AllDiff(String name, Variable[] variables) {
+        super(name, variables);
     }
 
-    public AllDiff() {
-        super();
+    public AllDiff(String name) {
+        super(name);
     }
 
     boolean isConsistent(){
@@ -40,7 +40,7 @@ public class AllDiff extends Constraint{
     boolean inferDomains(ArrayList<Variable> varlist, ChangeList cl){
         if(!isConsistent()) return false;
         Variable v = getVarSingletonDomain(varlist);
-        if (v == null) return true;
+        if (v == null) return isConsistent();
         varlist.remove(v);
 
         Integer v_value = v.domain.iterator().next();

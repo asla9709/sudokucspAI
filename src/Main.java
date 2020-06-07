@@ -53,12 +53,12 @@ public class Main {
         //generate constraints
         //rows
         for (int row = 0; row < 9; row++) {
-            var c = new AllDiff(sBoard[row]);
+            var c = new AllDiff("Row " + row, sBoard[row]);
             constraints.add(c);
         }
         //columns
         for (int col = 0; col < 9; col++) {
-            var c = new AllDiff();
+            var c = new AllDiff("Col " + col);
             for (int row = 0; row < 9; row++) {
                 c.add(sBoard[row][col]);
             }
@@ -67,7 +67,7 @@ public class Main {
         //squares
         var sq_constraints = new AllDiff[9];
         for (int i = 0; i < 9; i++) {
-           sq_constraints[i] = new AllDiff();
+           sq_constraints[i] = new AllDiff("Square " + i);
         }
         for (int row = 0; row < 9; row++) {
             for (int col = 0; col < 9; col++) {
@@ -107,6 +107,14 @@ public class Main {
         } else {
             System.out.println("This sudoku puzzle has no solution :(");
         }
+
+        for(Constraint c : constraints){
+            if(!c.isConsistent()){
+                System.out.println("Failed Constraint " + c.name);
+                System.out.println(c.inferDomains(new ChangeList()));
+            }
+        }
+
 
 
 
