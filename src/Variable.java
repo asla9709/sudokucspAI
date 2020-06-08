@@ -2,13 +2,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 public class Variable {
-    public int value;
     public String name;
     public HashSet<Integer> domain = new HashSet<>();
     public ArrayList<Constraint> constraints = new ArrayList<>();
 
     Variable(int value){
-        this.value = value;
         if(value == 0){
             for (int i = 1; i <= 9; i++) {
                 domain.add(i);
@@ -28,9 +26,13 @@ public class Variable {
         domain.toArray(domainArr);
         for(Integer i : domainArr){
             if(i == value) continue;
-            domain.remove(i);
             removeFromDomain(i, cl);
         }
+    }
+
+    int getValue(){
+        if(domain.size() != 1) return 0;
+        return domain.iterator().next();
     }
 
     void removeFromDomain(Integer value, ChangeList cl){
@@ -45,7 +47,6 @@ public class Variable {
     boolean doArcConsistency(ChangeList cl){
         for(Constraint constraint: constraints){
             if(!constraint.inferDomains(cl)) return false;
-            assert true;
         }
         return true;
     }
@@ -66,7 +67,6 @@ public class Variable {
     public String toString() {
         return "Variable{" +
                 "name=" + name +
-                "value=" + value +
                 ", domain=" + domain +
                 '}';
     }

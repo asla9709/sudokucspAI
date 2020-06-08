@@ -1,3 +1,4 @@
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,32 +32,43 @@ public class Test {
 //        //SHould be back to the start
 //        return;
 
-        var H1 =  new HashMap<Integer, HashSet<Integer>>();
-        var H2 =  new HashMap<Integer, HashSet<Integer>>();
+//        var H1 =  new HashMap<Integer, HashSet<Integer>>();
+//        var H2 =  new HashMap<Integer, HashSet<Integer>>();
+//
+//        H1.put(1, new HashSet<>());
+//        H1.get(1).add(1);
+//        H1.get(1).add(2);
+//        H1.put(41, new HashSet<>());
+//
+//        H2.put(1, new HashSet<>());
+//        H2.get(1).add(3);
+//        H2.get(1).add(4);
+//        H2.put(2, new HashSet<>());
+//
+//
+//        H2.forEach(
+//                (key, value) -> H1.merge(
+//                        key,
+//                        value,
+//                        (hs1, hs2) -> {
+//                            hs1.addAll(hs2);
+//                            return hs1;
+//                        }
+//                )
+//        );
+//
+//        return;
 
-        H1.put(1, new HashSet<>());
-        H1.get(1).add(1);
-        H1.get(1).add(2);
-        H1.put(41, new HashSet<>());
+        File test_folder = new File("./tests");
+        File[] test_inputs = test_folder.listFiles();
 
-        H2.put(1, new HashSet<>());
-        H2.get(1).add(3);
-        H2.get(1).add(4);
-        H2.put(2, new HashSet<>());
+        for(File f : test_inputs){
+            System.out.println("Solving Board " + f.getName());
+            Variable[][] board = Main.solveBoard(f.getAbsolutePath());
+            System.out.println("--------------------------------");
+        }
 
-
-        H2.forEach(
-                (key, value) -> H1.merge(
-                        key,
-                        value,
-                        (hs1, hs2) -> {
-                            hs1.addAll(hs2);
-                            return hs1;
-                        }
-                )
-        );
-
-        return;
+        System.out.println(Counter.counter2 + " boards failed");
 
     }
 }
